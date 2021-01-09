@@ -52,7 +52,7 @@ bool PollPoller::removeFd(int fd)
 	
 	idmap_.erase(fd);
 
-	return false;
+	return true;
 }
 
 //poll function,get fd when event happens
