@@ -1,5 +1,5 @@
 //a useful method to make your object uncopyable in c++11
-//this method is metioned in <<Effective c++>>
+//this method is metioned in "Effective c++ 3rd"
 
 #ifndef SIMPLEHTTP_NONCOPYABLE_H
 #define SIMPLEHTTP_NONCOPYABLE_H
