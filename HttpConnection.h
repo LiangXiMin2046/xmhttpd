@@ -70,6 +70,11 @@ public:
 	{
 		inputBuffer_.append(beg,size);		
 	}
+	
+	size_t messageLength()
+	{
+		return inputBuffer_.size();
+	}
 private:
 	bool parseRequestLine(const std::string& request);	
 	
