@@ -1,4 +1,5 @@
 #include "HttpServer.h"
+#include "TimerOps.h"
 
 #include <fcntl.h>
 #include <errno.h>
@@ -6,13 +7,17 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <sys/wait.h>
+#include <string.h> //for memset
 
 HttpServer::HttpServer(uint16_t port)
   :  listenfd_(Sockets::createListenSocketOrDie(port)),
      idlefd_(::open("/dev/null",O_RDONLY | O_CLOEXEC)),
-	poller_(std::move(Poller::getPoller(listenfd_)))
+     poller_(std::move(Poller::getPoller(listenfd_))),
+     monitor_(std::move(new TimerMonitor)),
+     timerfd_(Timer::createTimerfd(CLOCK_MONOTONIC,TFD_CLOEXEC | TFD_NONBLOCK))
 {
-
+	setInterval(timerfd_);
+	poller_->addFd(timerfd_);
 }
 
 HttpServer::~HttpServer()
@@ -31,6 +36,17 @@ void HttpServer::start()
 			if(activefds_[i] == listenfd_)
 			{
 				acceptConnection();
+			}
+			else if(activefds_[i] == timerfd_)
+			{
+				uint64_t buf;
+				::read(timerfd_,&buf,sizeof buf);
+				int cnt = monitor_->checkTimeout(timeLimit_);
+				std::vector<int> fds = monitor_->removeNodes(cnt);
+				for(int i = 0; i < fds.size(); i++)
+				{
+					closeConnection(fds[i]);
+				}
 			}
 			else
 			{
@@ -62,7 +78,10 @@ void HttpServer::acceptConnection()
 	if(!poller_->addFd(connfd))
 		::close(connfd);
 	else
+	{
 		connections_.insert(make_pair(connfd,std::move(std::unique_ptr<HttpConnection>(new HttpConnection(connfd)))));	
+		updateMonitor(connfd);
+	}
 }
 
 void HttpServer::closeConnection(int fd)
@@ -79,6 +98,11 @@ void HttpServer::processMessage(int fd)
 	while((n = read(fd,buf,sizeof buf)) > 0)
 	{
 		connections_[fd]->appendInputBuffer(buf,n);
+		if(connections_[fd]->messageLength() >= maxMessageSize_)
+		{
+			errorHappens(fd,HttpResponse::k414RequestUrlTooLong,"Request-URL too long");
+			return;
+		}
 	}
 	if(n == -1 && errno != EAGAIN)
 	{
@@ -90,6 +114,7 @@ void HttpServer::processMessage(int fd)
 		closeConnection(fd);
 		return;
 	}
+	updateMonitor(fd);
 	if(!connections_[fd]->parseMessage())
 	{
 		connections_[fd]->sendResponse();
@@ -217,4 +242,21 @@ void HttpServer::errorHappens(int fd,HttpResponse::HttpStatusCode statusCode,con
 		connections_[fd]->response().setStatusMessage(statusMessage);
 		connections_[fd]->sendResponse();
 		closeConnection(fd);	
+}
+
+void HttpServer::setInterval(int timerfd)
+{
+	struct itimerspec nv;
+	struct timespec start;
+	::clock_gettime(CLOCK_MONOTONIC,&start);
+	memset(&nv,0,sizeof nv);
+	nv.it_value.tv_sec = timeLimit_;
+	nv.it_interval.tv_sec = timeLimit_;
+	Timer::setTimer(timerfd,0,&nv,NULL);
+}
+
+void HttpServer::updateMonitor(int fd)
+{
+	int now = time(NULL);
+	monitor_->putIntoMonitor(fd,now);
 }
