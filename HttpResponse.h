@@ -16,6 +16,7 @@ public:
 		k404NotFound = 404,
 		k405MethodNotAllowed = 405,
 		k411LengthRequired = 411,
+		k414RequestUrlTooLong = 414,
 		k500InternalServerError = 500,
 		k505HttpVersionNotSupported = 505
 	};
