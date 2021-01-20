@@ -8,7 +8,6 @@
 
 int main(void)
 {
-
 	switch(fork())
 	{
 		case -1:
@@ -33,7 +32,7 @@ int main(void)
 		default:
 			::exit(0); 
 	}						
-
+	
 	HttpServer server(80); //run on port 80 for http
 	server.start();	
 	return 0;
