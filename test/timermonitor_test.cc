@@ -54,12 +54,12 @@ int main(int argc,char* argv[])
 			{
 				uint64_t buf;
 				::read(timerfd,&buf,sizeof buf);
-				int cnt = monitor -> checkTimeout(5);		
-				std::vector<int> result = monitor->removeNodes(cnt);
+				std::vector<int> fds = monitor -> checkTimeout(5);		
 				//std::cout << result.size() << std::endl;
-				for(int i = 0; i < 	result.size(); i++)
+				for(int i = 0; i < 	fds.size(); i++)
 				{
-					std::cout << "key = " << result[i] << "has deleted" << std::endl;
+					std::cout << "key = " << fds[i] << " has deleted" << std::endl;
+					monitor->removeNode(fds[i]);
 				}
 				std::cout << "there are " << monitor->size() << " nodes" << std::endl;	
 			}		
