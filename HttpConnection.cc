@@ -5,6 +5,11 @@
 #include <sstream>
 #include <stdlib.h>
 
+/*
+* parse request line of HTTP message.
+* if return false,400 BadRequest happens. 
+*/
+
 bool HttpConnection::parseRequestLine(const std::string& request)
 {
 	std::string method,url,version;
@@ -64,6 +69,12 @@ bool HttpConnection::parseRequestLine(const std::string& request)
 	}
 	return true;
 }
+
+/*
+* parse HTTP message,an important function.
+* always remeber that client and network are not reliable.
+* message delay and bad request always happens.
+*/
 
 bool HttpConnection::parseMessage()
 {
@@ -160,6 +171,9 @@ bool HttpConnection::parseMessage()
 	return success;
 }
 
+/*
+* write back HTTP response message.
+*/
 
 void HttpConnection::sendResponse()
 {
@@ -176,7 +190,10 @@ void HttpConnection::sendResponse()
 	}
 }
 
-// just for test of request,see ./test.httpcontest.cc
+/* 
+* just for test of request,see ./test.httpcontest.cc
+*/
+
 std::string HttpConnection::reqAsString()
 {
 	std::string info;
