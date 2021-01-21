@@ -2,7 +2,7 @@
 #define SIMPLEHTTP_TIMERMONITOR_H
 
 /*
-*by using LRU algorithm,TimerMonitor can help close those
+*by using LRU algorithm,TimerMonitor can help server to close those
 *connections which are over time. 
 */
 
@@ -17,8 +17,8 @@ class TimerMonitor : noncopyable
 public:
 	TimerMonitor();
 	~TimerMonitor();
-	int checkTimeout(const time_t limit);
-	std::vector<int> removeNodes(int k);
+	std::vector<int> checkTimeout(const time_t limit);
+	void removeNode(int key);
 	bool putIntoMonitor(int key,time_t lastArrive);
 	time_t getArriveTime(int key);
 	int size() const;
@@ -40,7 +40,6 @@ private:
 	};
 
 private:
-	int deleteHead();
 	bool insertTail(int key,time_t lastArrive);
 	void update(int key);	
 	

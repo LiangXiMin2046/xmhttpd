@@ -27,20 +27,20 @@ TimerMonitor::~TimerMonitor()
 }
 
 /*
-*Check how many connections should be
-*closed.The arguement limit means time*limit
+*Find out connections should be closed.
+*The arguement limit means time limit.
 */
 
-int TimerMonitor::checkTimeout(const time_t limit)
+std::vector<int> TimerMonitor::checkTimeout(const time_t limit)
 {
-	int cnt = 0;
+	std::vector<int> fds;
 	Node* cur = header_->next_;
 	time_t now = time(NULL);
 	while(cur != tail_)
 	{
 		if(now - cur->lastArrive_ >= limit)
 		{
-			cnt++;
+			fds.push_back(cur->key_);
 			cur = cur->next_;
 		}
 		else
@@ -48,23 +48,26 @@ int TimerMonitor::checkTimeout(const time_t limit)
 			break;
 		}		
 	}
-	return cnt;
+	return fds;
 }
 
 /*
-* remove K connections over time
-* return fd of connections
+* remove node from linklist.
+* the connection will be closed.
 */
 
-std::vector<int> TimerMonitor::removeNodes(int k)
+void TimerMonitor::removeNode(int key)
 {
-	std::vector<int> closeFd;
-	for(int i = 0; i < k; i++)
-	{
-		int fd = deleteHead();
-		closeFd.push_back(fd);
-	}
-	return closeFd;
+	Node* cur = nodes_[key];
+	nodes_.erase(key);
+
+	Node* pre = cur->pre_;
+	Node* ne = cur->next_;
+	pre->next_ = ne;
+	ne->pre_ = pre;
+	
+	--count_;
+	delete cur;	
 }
 
 /*
@@ -98,22 +101,6 @@ time_t TimerMonitor::getArriveTime(int key)
 		return nodes_[key]->lastArrive_;
 }
 
-/*
-*delete first node after head_ in the linklist
-*/
-
-int TimerMonitor::deleteHead()
-{
-	--count_;
-	Node* keyNode = header_->next_;
-	int key = keyNode->key_;
-	nodes_.erase(key);
-	keyNode->key_ = -1;
-	keyNode->lastArrive_ = 0;
-	delete header_;
-	header_ = keyNode;
-	return key;
-}
 
 /*
 *insert a new node into tail
