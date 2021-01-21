@@ -33,7 +33,7 @@ private:
 
 	void acceptConnection();
 	void setInterval(int timerfd);
-	void updateMonitor(int fd);
+	bool updateMonitor(int fd);
 	void processMessage(int fd);
 	void errorHappens(int fd,HttpResponse::HttpStatusCode statusCode,const std::string& statusMessage);
 	void closeConnection(int fd);

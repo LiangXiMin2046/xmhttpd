@@ -9,6 +9,10 @@
 #include <sys/wait.h>
 #include <string.h> //for memset
 
+/*
+*constructor function
+*/
+
 HttpServer::HttpServer(uint16_t port)
   :  listenfd_(Sockets::createListenSocketOrDie(port)),
      idlefd_(::open("/dev/null",O_RDONLY | O_CLOEXEC)),
@@ -25,6 +29,11 @@ HttpServer::~HttpServer()
 
 }
 
+/*
+* whatever accepting a connection or responsing to client or closing connection
+* handled by this function.
+*/
+
 void HttpServer::start()
 {
 	while(true)
@@ -40,9 +49,8 @@ void HttpServer::start()
 			else if(activefds_[i] == timerfd_)
 			{
 				uint64_t buf;
-				::read(timerfd_,&buf,sizeof buf);
-				int cnt = monitor_->checkTimeout(timeLimit_);
-				std::vector<int> fds = monitor_->removeNodes(cnt);
+				::read(timerfd_,&buf,sizeof buf); //data should be read
+				std::vector<int> fds = monitor_->checkTimeout(timeLimit_);
 				for(int i = 0; i < fds.size(); i++)
 				{
 					closeConnection(fds[i]);
@@ -55,6 +63,11 @@ void HttpServer::start()
 		}
 	}
 }
+
+/*
+* accept a new connection here.
+* prepare a idlefd once EMFILE happens(libevent did so).
+*/
 
 void HttpServer::acceptConnection()
 {
@@ -75,20 +88,40 @@ void HttpServer::acceptConnection()
 		return;
 	}
 	
-	if(!poller_->addFd(connfd))
-		::close(connfd);
 	else
 	{
-		connections_.insert(make_pair(connfd,std::move(std::unique_ptr<HttpConnection>(new HttpConnection(connfd)))));	
-		updateMonitor(connfd);
+		if(!updateMonitor(connfd))
+		{
+			::close(connfd);
+		}
+		else
+		{
+			if(!poller_->addFd(connfd))
+			{
+				::close(connfd);
+			}
+			else
+			{
+				connections_.insert(make_pair(connfd,std::move(std::unique_ptr<HttpConnection>(new HttpConnection(connfd)))));	
+			}
+		}
 	}
 }
 
+/*
+* close connection
+*/
 void HttpServer::closeConnection(int fd)
 {
 	poller_->removeFd(fd);
+	monitor_->removeNode(fd);
 	connections_.erase(fd);
 }
+
+/*
+* parse the message from client.
+* errors also can be processed.
+*/
 
 void HttpServer::processMessage(int fd)
 {
@@ -155,6 +188,11 @@ void HttpServer::processMessage(int fd)
 	}	
 }
 
+/*
+* if client just request a static page.
+* just read and  write.
+*/
+
 bool HttpServer::serverPage(int fd)
 {
 	std::string path = connections_[fd]->request().getPath();
@@ -182,6 +220,11 @@ bool HttpServer::serverPage(int fd)
 	::close(pageFd);
 	return true;
 }
+
+/*
+* if client request a dynamic web page,use execl family function
+* and pipe communication
+*/
 
 bool HttpServer::excuteCgi(int fd)
 {
@@ -236,6 +279,10 @@ bool HttpServer::excuteCgi(int fd)
 	return true;
 }
 
+/*
+* error process.
+*/
+
 void HttpServer::errorHappens(int fd,HttpResponse::HttpStatusCode statusCode,const std::string& statusMessage)
 {
 		connections_[fd]->response().setStatusCode(statusCode);
@@ -243,6 +290,10 @@ void HttpServer::errorHappens(int fd,HttpResponse::HttpStatusCode statusCode,con
 		connections_[fd]->sendResponse();
 		closeConnection(fd);	
 }
+
+/*
+* set time interval for monitor_ to check overtime connections.
+*/
 
 void HttpServer::setInterval(int timerfd)
 {
@@ -255,8 +306,12 @@ void HttpServer::setInterval(int timerfd)
 	Timer::setTimer(timerfd,0,&nv,NULL);
 }
 
-void HttpServer::updateMonitor(int fd)
+/*
+* update the last message arrived time.
+*/
+
+bool HttpServer::updateMonitor(int fd)
 {
 	int now = time(NULL);
-	monitor_->putIntoMonitor(fd,now);
+	return monitor_->putIntoMonitor(fd,now);
 }
