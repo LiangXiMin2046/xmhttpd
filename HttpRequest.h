@@ -28,9 +28,11 @@ public:
          cgiFlag_(false)
 	{
 	}
+
 	~HttpRequest()
 	{
 	}
+
 	bool setMethod(const std::string& m)
 	{
 		assert(method_ == kInvalid);
