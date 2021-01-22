@@ -30,7 +30,7 @@ private:
 		Node* pre_;
 		Node* next_;
 		Node(int key,time_t lastArrive)
-			: key_(key)
+			: key_(key),
 			  lastArrive_(lastArrive),
  			  pre_(nullptr),
 			  next_(nullptr)
