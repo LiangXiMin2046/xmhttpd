@@ -27,7 +27,7 @@ sudo make
 1. 默认使用epoll实现多路复用，如果想使用poll，请添加自行环境变量“SIMPLEHTTP_USE_POLL”。
 2. 测试index.html的cgi时请保证主机默认的python解释器为python3以上版本，否则请安装python3，将其设置为默认python解释器，或者修改hello.py的第一行为`#!/usr/bin/python3`
 3. 请为脚本文件赋予可执行权限，`chmod +x 777 filename`
-4. 我的编译环境为Centos 7.0，gcc版本4.8.5，其他环境目前尚未测试。
+4. 我的编译环境为Centos 7.0，gcc版本4.8.5，cmake版本3.16(需要>=3.15),其他环境目前尚未测试。
 5. 目前只支持GET和POST方法。
 # 致谢
 感谢[@chenshuo](https://github.com/chenshuo)的书籍与他的[muduo库](https://github.com/chenshuo/muduo)为我在学习网络编程的过程中带来的帮助。
