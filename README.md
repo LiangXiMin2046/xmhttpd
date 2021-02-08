@@ -9,7 +9,7 @@ xmhttd是一个轻量级的Http服务器程序，是我学习网络编程的一�
 ```
 ab -c 500 -n 10000 -k 127.0.0.1:80/
 ```
-在我单核，cpu频率为1Ghz,内存2g，操作系统为CentOs7.0的虚拟机上测试出的Request Per Second大约为7800。
+在我单核，cpu频率为1Ghz,内存2g，操作系统为CentOs7.0的虚拟机上测试出的Queries Per Second大约为7800。
 # 编译方法：
 请事先安装好cmake，进入CMakeLists.txt所在文件夹。
 ```
